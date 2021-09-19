@@ -1,0 +1,81 @@
+terminal String PLUS, MINUS, TIMES, DIVIDE, LPAREN, RPAREN, ID, COMMA, EQ, NOTEQ, BEGIN, END, SEMI, INT, REAL, STRING, ASSIGN, RETURN, IF, ELSE, WRITE, READ, Qstring, MAIN, TRUE, FALSE; 
+terminal String NUMBER;
+non terminal String Program, Program2;
+non terminal String MethodDecl, nonEmptyFormalParams, FormalParam;
+non terminal String Block, Statements, Statement, LocalVarDecl, AssignStmt, ReturnStmt, MatchedStmt, UnmatchedStmt, WriteStmt, ReadStmt, Type, QString;
+non terminal String Expression, MultiplicativeExpr, PrimaryExpr, nonEmptyActualParams, BoolExpression;
+
+Program2 ::= Program:e {: RESULT = "import java.io.*;\npublic class A5 {\nstatic BufferedReader _br;\nstatic BufferedWriter _bw;\nstatic Double _temp;\n" + e + "}"; :}
+;
+Program ::= Program:e1 MethodDecl:e2 {: RESULT = e1 + e2; :}
+| MethodDecl:e {: RESULT = e; :}
+;
+MethodDecl ::= Type MAIN ID LPAREN RPAREN Block:e {: RESULT = "public static void main(String[] args) throws Exception " + e; :}
+| Type MAIN ID LPAREN nonEmptyFormalParams RPAREN Block:e {: RESULT = "public static void main(String[] args) throws Exception " + e; :}
+| Type:e1 ID:e2 LPAREN RPAREN Block:e3 {: RESULT = "static "+ e1 + " " + e2 + "(" + ")" + " throws Exception " + e3; :}
+| Type:e1 ID:e2 LPAREN nonEmptyFormalParams:e3 RPAREN Block:e4 {: RESULT = "static " + e1 + " " + e2 + "(" + e3 + ")" + " throws Exception " + e4; :}
+;
+nonEmptyFormalParams ::= nonEmptyFormalParams:e1 COMMA FormalParam:e2 {: RESULT = e1 + "," + " " + e2; :}
+| FormalParam:e {: RESULT = e; :}
+;
+FormalParam ::= Type:e1 ID:e2 {: RESULT = e1 + " " + e2; :}
+;
+
+Block ::= BEGIN Statements:e END {: RESULT = "{\n" + e + "}\n"; :}
+;
+Statements ::= Statements:e1 Statement:e2 {: RESULT = e1 + e2; :}
+| Statement:e {: RESULT = e; :}
+;
+Statement ::= MatchedStmt:e {: RESULT = e + "\n"; :}
+| UnmatchedStmt:e {: RESULT = e + "\n"; :}
+;
+MatchedStmt ::= IF LPAREN BoolExpression:e1 RPAREN MatchedStmt:e2 ELSE MatchedStmt:e3 {: RESULT = "if(" + e1 + ")\n" + e2 + "else\n" + e3; :}
+| Block:e {: RESULT = e; :}
+| LocalVarDecl:e {: RESULT = e; :}
+| AssignStmt:e {: RESULT = e; :}
+| ReturnStmt:e {: RESULT = e; :}
+| WriteStmt:e {: RESULT = e; :}
+| ReadStmt:e {: RESULT = e; :}
+;
+UnmatchedStmt ::= IF LPAREN BoolExpression:e1 RPAREN Statement:e2 {: RESULT = "if(" + e1 + ")\n" + e2; :}
+| IF LPAREN BoolExpression:e1 RPAREN MatchedStmt:e2 ELSE UnmatchedStmt:e3 {: RESULT = "if(" + e1 + ")\n" + e2 + "else\n" + e3; :}
+;
+LocalVarDecl ::= Type:e1 ID:e2 SEMI {: RESULT = e1 + " " + e2 + ";"; :}
+| Type:e1 AssignStmt:e2 {: RESULT = e1 + " " + e2; :}
+;
+Type ::= INT {: RESULT = "Integer"; :}
+| REAL {: RESULT = "Double"; :}
+| STRING {: RESULT = "String"; :}
+;
+AssignStmt ::= ID:e1 ASSIGN Expression:e2 SEMI {: RESULT = e1 + " = " + e2 + ";"; :}
+| ID:e1 ASSIGN Qstring:e2 SEMI {: RESULT = e1 + " = " + e2 + ";"; :}
+;
+ReturnStmt ::= RETURN Expression:e SEMI {: RESULT = "return " + e + ";"; :}
+;
+WriteStmt ::= WRITE LPAREN Expression:e1 COMMA Qstring:e2 RPAREN SEMI {: RESULT = "_temp = Double.valueOf(" + e1 + ");\n_bw = new BufferedWriter(new FileWriter(" + e2 + "));\n_bw.write(\"\" +  _temp);\n_bw.close();"; :}
+;
+ReadStmt ::= READ LPAREN ID:e1 COMMA Qstring:e2 RPAREN SEMI {: RESULT = "_br = new BufferedReader(new FileReader(" + e2 + "));\n" + e1 + " = new Integer(_br.readLine()).intValue();"; :}
+;
+
+Expression ::= Expression:e1 PLUS MultiplicativeExpr:e2 {: RESULT = e1 + "+" + e2; :}
+| Expression:e1 MINUS MultiplicativeExpr:e2 {: RESULT = e1 + "-" + e2; :}
+| MultiplicativeExpr:e {: RESULT = e; :}
+;
+MultiplicativeExpr ::= MultiplicativeExpr:e1 TIMES PrimaryExpr:e2 {: RESULT = e1 + "*" + e2; :}
+| MultiplicativeExpr:e1 DIVIDE PrimaryExpr:e2 {: RESULT = e1 + "/" + e2; :}
+| PrimaryExpr:e {: RESULT = e; :} 
+;
+PrimaryExpr ::= NUMBER:e {: RESULT = e; :}
+| ID:e {: RESULT = e; :}
+| LPAREN Expression:e RPAREN {: RESULT = "(" + e + ")"; :} 
+| ID:e LPAREN RPAREN {: RESULT = e + "(" + ")"; :}
+| ID:e1 LPAREN nonEmptyActualParams:e2 RPAREN {: RESULT = e1 + "(" + e2 + ")"; :}
+;
+BoolExpression ::= Expression:e1 EQ Expression:e2 {: RESULT = e1 + " == " + e2; :} 
+| Expression:e1 NOTEQ Expression:e2 {: RESULT = e1 + " != " + e2; :} 
+| TRUE {: RESULT = "true"; :}
+| FALSE {: RESULT = "false"; :}
+;
+nonEmptyActualParams ::= nonEmptyActualParams:e1 COMMA Expression:e2 {: RESULT = e1 + ", " + e2; :}
+| Expression:e {: RESULT = e; :}
+;
